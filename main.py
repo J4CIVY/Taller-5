@@ -4,51 +4,55 @@ app = FastAPI()
 
 índice_invertido = {}
 
-documento1 = "Este es el primer documento. Contiene información de ejemplo."
-documento2 = "Este es el segundo documento. También contiene información de ejemplo."
-documento3 = "Otro documento diferente con datos distintos."
+documentos = [
+    "Este es el primer documento contiene información de ejemplo.",
+    "Este es el segundo documento también contiene información de ejemplo.",
+    "El tercer documento contiene datos completamente distintos.",
+    "El cuarto documento es este y va con contenido adicional.",
+    "El quinto documento es otro ejemplo de texto.",
+    "Documento número seis con datos relevantes.",
+    "Este documento siete es un ejemplo adicional.",
+    "El octavo documento contiene información importante.",
+    "Noveno documento con contenido variado.",
+    "El décimo y último documento de la colección."
+]
+
+titulos = [
+    "Documento 1", "Documento 2", "Documento 3", "Documento 4", "Documento 5",
+    "Documento 6", "Documento 7", "Documento 8", "Documento 9", "Documento 10"
+]
 
 def construir_índice_invertido(documentos):
     índice = {}
     for id_doc, contenido_doc in enumerate(documentos):
-        palabras = contenido_doc.split()
+        palabras = contenido_doc.lower().split()
         for palabra in palabras:
-            palabra = palabra.lower()
             if palabra not in índice:
                 índice[palabra] = [id_doc]
             else:
-                índice[palabra].append(id_doc)
+                if id_doc not in índice[palabra]:
+                    índice[palabra].append(id_doc)
     return índice
 
-documentos = [documento1, documento2, documento3]
 índice_invertido = construir_índice_invertido(documentos)
 
 def buscar_en_índice_invertido(consulta, índice, documentos):
     consulta = consulta.lower()
     if consulta in índice:
         ids_docs = índice[consulta]
-        resultado = [documentos[id_doc] for id_doc in ids_docs if id_doc < len(documentos)]
-        return resultado
+        resultados = [{"titulo": titulos[id_doc], "contenido": documentos[id_doc]} for id_doc in ids_docs]
+        return resultados
     else:
         return []
-
-@app.post("/agregar_documento/{id_documento}")
-async def agregar_documento(id_documento: str, texto: str):
-    global índice_invertido
-
-    palabras = texto.split()
-    for palabra in palabras:
-        palabra = palabra.lower()
-        if palabra not in índice_invertido:
-            índice_invertido[palabra] = []
-        índice_invertido[palabra].append(id_documento)
-    return {"mensaje": f"Documento {id_documento} agregado al índice invertido"}
 
 @app.get("/buscar/{consulta}")
 async def buscar(consulta: str):
     consulta = consulta.lower()
-    resultado = buscar_en_índice_invertido(consulta, índice_invertido, documentos)
-    return {"resultado": resultado}
+    resultados = buscar_en_índice_invertido(consulta, índice_invertido, documentos)
+    if resultados:
+        return {"resultado": resultados}
+    else:
+        return {"resultado": "La palabra no fue encontrada en ningún documento."}
 
 @app.get("/")
 async def bienvenido():
@@ -57,5 +61,3 @@ async def bienvenido():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="127.0.0.1", port=8000)
-
-
