@@ -1,0 +1,207 @@
+\documentclass[journal]{IEEEtran}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{hyperref}
+
+\lstdefinestyle{custompython}{
+    language=Python,
+    frame=tb,
+    basicstyle=\footnotesize,
+    numbers=left,
+    numberstyle=\tiny,
+    numbersep=5pt,
+    tabsize=2,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{red}{$\hookrightarrow$}\space},
+    showspaces=false,
+    showstringspaces=false
+}
+
+\begin{document}
+
+\title{Motor de Búsqueda de Documentos con FastAPI}
+
+\author{\IEEEauthorblockN{James Andres Cespedes Ibarra}
+\IEEEauthorblockA{Fundación Universitaria Konrad Lorenz\\
+jamesa.cespedesi@konradlorenz.edu.co}
+}
+
+\maketitle
+
+\begin{abstract}
+Este artículo presenta un motor de búsqueda de documentos implementado con el framework FastAPI en Python. El motor de búsqueda utiliza un índice invertido para buscar documentos que contienen palabras clave específicas. El código fuente se describe detalladamente en este artículo, junto con ejemplos de uso y una breve explicación de cómo funciona.
+\end{abstract}
+
+\section{Introducción}
+El motor de búsqueda de documentos implementado con FastAPI permite a los usuarios buscar documentos por palabras clave. Utiliza un índice invertido para asociar palabras clave con documentos y recuperarlos eficientemente. A continuación, se describe el código paso a paso.
+
+\section{Implementación}
+
+\subsection{Definición de la Aplicación FastAPI}
+El código comienza importando FastAPI y creando una instancia de la aplicación. La aplicación se configura para manejar dos rutas: una para buscar documentos por palabras clave y otra para mostrar un mensaje de bienvenida en la raíz.
+
+\begin{lstlisting}[style=custompython]
+from fastapi import FastAPI
+import collections
+
+app = FastAPI()
+\end{lstlisting}
+
+\subsection{Índice Invertido y Clase Documento}
+Se define un índice invertido como un diccionario que asocia palabras clave con conjuntos de documentos que las contienen. También se crea una clase Documento para representar documentos con su contenido y palabras clave.
+
+\begin{lstlisting}[style=custompython]
+índice_invertido = collections.defaultdict(set)
+
+class Documento:
+    def __init__(self, contenido):
+        self.contenido = contenido
+        self.palabras_clave = set(contenido.lower().split())
+\end{lstlisting}
+
+\subsection{Documentos de Ejemplo}
+Se crean una serie de documentos de ejemplo y se almacenan en una lista.
+
+\begin{lstlisting}[style=custompython]
+documentos = [
+    Documento("Este es el primer documento contiene información de ejemplo."),
+    Documento("Este es el segundo documento también contiene información de ejemplo."),
+    # ...
+]
+\end{lstlisting}
+
+\subsection{Construcción del Índice Invertido}
+Se define una función construir índice invertido que recorre los documentos y construye el índice invertido asociando palabras clave con los documentos que las contienen.
+
+\begin{lstlisting}[style=custompython]
+def construir_índice_invertido(documentos):
+    índice_invertido = collections.defaultdict(set)
+    for i, documento in enumerate(documentos):
+        for palabra in documento.palabras_clave:
+            índice_invertido[palabra].add(i)
+    return índice_invertido
+
+índice_invertido = construir_índice_invertido(documentos)
+\end{lstlisting}
+
+\subsection{Búsqueda en el Índice Invertido}
+Se define una función buscar en índice invertido que toma una consulta y el índice invertido y devuelve una lista de documentos que contienen la consulta.
+
+\begin{lstlisting}[style=custompython]
+def buscar_en_índice_invertido(consulta, índice):
+    consulta = consulta.lower()
+    if consulta in índice:
+        documentos_con_palabra = set()
+        for doc_index in índice[consulta]:
+            documento = documentos[doc_index]
+            documentos_con_palabra.add((documento.contenido, consulta))
+        return list(documentos_con_palabra)
+    else:
+        return []
+\end{lstlisting}
+
+\subsection{Rutas de la Aplicación}
+Se definen dos rutas en la aplicación FastAPI: una para buscar documentos y otra para mostrar un mensaje de bienvenida.
+
+\begin{lstlisting}[style=custompython]
+@app.get("/buscar/{consulta}")
+async def buscar(consulta: str):
+    consulta = consulta.lower()
+    resultados = buscar_en_índice_invertido(consulta, índice_invertido)
+    if resultados:
+        return {"resultados": resultados}
+    else:
+        return {"resultado": "La palabra no fue encontrada en ningún documento."}
+
+@app.get("/")
+async def bienvenido():
+    return {"mensaje": "¡Bienvenido al motor de búsqueda de documentos!"}
+\end{lstlisting}
+
+\subsection{Ejecución de la Aplicación}
+La aplicación se ejecuta utilizando Uvicorn en el bloque final del código.
+
+\begin{lstlisting}[style=custompython]
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=3001)
+\end{lstlisting}
+
+\section{Configuración de DigitalOcean}
+Propiedades del Droplet:
+\begin{enumerate}
+    \item Memoria Ram: 512 MB / 1 CPU.
+     \item Memoria En Disco: 10 GB SSD.
+    \item Ancho De Banda: 500 GB De Transferencia.
+\end{enumerate}
+
+\section{Control de Versiones con Git}
+
+\subsection{Clonación del Repositorio}
+Para este proyecto se opto clonar un repositorio alojado en GITHUB.COM al servidor DigitalOcean en la ruta root/Microservicio:
+
+\begin{lstlisting} [style=custompython]
+$ git clone <https://github.com/J4CIVY/Taller-5.git>
+\end{lstlisting}
+
+\section{Instalación y Configuración de las dependencias necesarias para la evecucion del proyecto}
+
+Instalacion de python3-pip,  FastAPI y Uvicorn:
+
+\begin{lstlisting} [style=custompython]
+$ apt install python3-pip
+$ apt install python3-fastapi
+$ apt install python3-uvicorn
+\end{lstlisting}
+
+Ejecución preliminar del proyecto:
+
+\begin{lstlisting} [style=custompython]
+$ uvicorn main:app --host 134.122.113.40 --port 3001 --reload
+\end{lstlisting}
+
+\section{Configuración de Nginx}
+Configuración del servidor web Nginx para redirigir las solicitudes al servidor FastAPI.
+
+\begin{lstlisting} [style=custompython]
+$ apt-get install nginx
+$ root/Microservicio/Taller-5 /etc/nginx/sites-available/default
+\end{lstlisting}
+
+Agrega la configuración de Nginx:
+
+\begin{lstlisting} [style=custompython]
+server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+
+        location / {
+                proxy_pass http://134.122.113.40:3001;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+        }
+}
+\end{lstlisting}
+
+Activa el sitio y recarga Nginx:
+
+\begin{lstlisting} [style=custompython]
+/etc/nginx/sites-enabled
+$ sudo service nginx restart
+\end{lstlisting}
+
+\section{Gestión de Procesos con PM2}
+PM2 es un administrador de procesos para Node.js. Ejecuta tu aplicación FastAPI con PM2 para asegurarte de que se ejecute en segundo plano y se reinicie en caso de fallo.
+
+\begin{lstlisting} [style=custompython]
+$ pip install uvicorn
+$ pm2 start uvicorn main:app --name "Taller5"
+$ pm2 save
+$ pm2 startup
+\end{lstlisting}
+
+\section{Conclusiones}
+En este artículo, se ha presentado un motor de búsqueda de documentos implementado con FastAPI en Python. El motor de búsqueda utiliza un índice invertido para asociar palabras clave con documentos y permite a los usuarios buscar documentos por palabras clave. El código se ha explicado paso a paso, incluyendo la definición de la aplicación FastAPI, la construcción del índice invertido y las rutas de la aplicación.
+
+\end{document}
