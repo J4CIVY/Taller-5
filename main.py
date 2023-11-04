@@ -1,56 +1,54 @@
 from fastapi import FastAPI
+import collections
 
 app = FastAPI()
 
-índice_invertido = {}
+índice_invertido = collections.defaultdict(set)
+
+class Documento:
+    def __init__(self, contenido):
+        self.contenido = contenido
+        self.palabras_clave = set(contenido.lower().split())
 
 documentos = [
-    "Este es el primer documento contiene información de ejemplo.",
-    "Este es el segundo documento también contiene información de ejemplo.",
-    "El tercer documento contiene datos completamente distintos.",
-    "El cuarto documento es este y va con contenido adicional.",
-    "El quinto documento es otro ejemplo de texto.",
-    "Documento número seis con datos relevantes.",
-    "Este documento siete es un ejemplo adicional.",
-    "El octavo documento contiene información importante.",
-    "Noveno documento con contenido variado.",
-    "El décimo y último documento de la colección."
-]
-
-titulos = [
-    "Documento 1", "Documento 2", "Documento 3", "Documento 4", "Documento 5",
-    "Documento 6", "Documento 7", "Documento 8", "Documento 9", "Documento 10"
+    Documento("Este es el primer documento contiene información de ejemplo."),
+    Documento("Este es el segundo documento también contiene información de ejemplo."),
+    Documento("El tercer documento contiene datos completamente distintos."),
+    Documento("El cuarto documento es este y va con contenido adicional."),
+    Documento("El quinto documento es otro ejemplo de texto."),
+    Documento("Documento número seis con datos relevantes."),
+    Documento("Este documento siete es un ejemplo adicional."),
+    Documento("El octavo documento contiene información importante."),
+    Documento("Noveno documento con contenido variado."),
+    Documento("El décimo y último documento de la colección.")
 ]
 
 def construir_índice_invertido(documentos):
-    índice = {}
-    for id_doc, contenido_doc in enumerate(documentos):
-        palabras = contenido_doc.lower().split()
-        for palabra in palabras:
-            if palabra not in índice:
-                índice[palabra] = [id_doc]
-            else:
-                if id_doc not in índice[palabra]:
-                    índice[palabra].append(id_doc)
-    return índice
+    índice_invertido = collections.defaultdict(set)
+    for i, documento in enumerate(documentos):
+        for palabra in documento.palabras_clave:
+            índice_invertido[palabra].add(i)
+    return índice_invertido
 
 índice_invertido = construir_índice_invertido(documentos)
 
-def buscar_en_índice_invertido(consulta, índice, documentos):
+def buscar_en_índice_invertido(consulta, índice):
     consulta = consulta.lower()
     if consulta in índice:
-        ids_docs = índice[consulta]
-        resultados = [{"titulo": titulos[id_doc], "contenido": documentos[id_doc]} for id_doc in ids_docs]
-        return resultados
+        documentos_con_palabra = set()
+        for doc_index in índice[consulta]:
+            documento = documentos[doc_index]
+            documentos_con_palabra.add((documento.contenido, consulta))
+        return list(documentos_con_palabra)
     else:
         return []
 
 @app.get("/buscar/{consulta}")
 async def buscar(consulta: str):
     consulta = consulta.lower()
-    resultados = buscar_en_índice_invertido(consulta, índice_invertido, documentos)
+    resultados = buscar_en_índice_invertido(consulta, índice_invertido)
     if resultados:
-        return {"resultado": resultados}
+        return {"resultados": resultados}
     else:
         return {"resultado": "La palabra no fue encontrada en ningún documento."}
 
